@@ -178,9 +178,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);disp
 // STATE
 // ═══════════════════════════════════════════════════════
 const S = {
-  answers: { nome:'Fernando Buono', empresa:'Press Metrologia', setor:'Indústria', cargo:'dono' },
+  answers: {},
   path: null,
-  pains: []   // [{descricao, area, tempo, impacto[], pessoas, tentativas[], urgencia, financeiro}]
+  pains: []
 };
 
 // ═══════════════════════════════════════════════════════
@@ -254,6 +254,25 @@ const MOT_OPTS = [
 const DISP_OPTS = [
   {l:'Esta semana',v:'esta-semana'},{l:'Próxima semana',v:'proxima-semana'},
   {l:'Em 15 dias ou mais',v:'15-dias'}
+];
+const SETOR_OPTS = [
+  {l:'Indústria / Manufatura',v:'industria'},{l:'Varejo / Comércio',v:'varejo'},
+  {l:'Serviços',v:'servicos'},{l:'Saúde / Farmacêutico',v:'saude'},
+  {l:'Tecnologia',v:'tecnologia'},{l:'Financeiro / Seguros',v:'financeiro'},
+  {l:'Logística / Transportes',v:'logistica'},{l:'Construção / Imobiliário',v:'construcao'},
+  {l:'Educação',v:'educacao'},{l:'Agronegócio',v:'agro'},{l:'Outro',v:'outro'},
+];
+const CARGO_OPTS = [
+  {l:'Sócio / Dono',v:'dono'},{l:'Diretor / C-Level',v:'diretor'},
+  {l:'Gerente',v:'gerente'},{l:'Coordenador / Supervisor',v:'coordenador'},
+  {l:'Analista / Especialista',v:'analista'},{l:'Outro',v:'outro'},
+];
+const AREA_ID_OPTS = [
+  {l:'Diretoria / Visão Geral',v:'diretoria'},{l:'TI / Tecnologia',v:'ti'},
+  {l:'RH / Pessoas',v:'rh'},{l:'Financeiro / Controladoria',v:'financeiro'},
+  {l:'Operações / Produção',v:'operacoes'},{l:'Comercial / Vendas',v:'comercial'},
+  {l:'Atendimento ao Cliente',v:'atendimento'},{l:'Marketing',v:'marketing'},
+  {l:'Jurídico',v:'juridico'},{l:'Outro',v:'outro'},
 ];
 
 // ── MATURITY QUESTION OPTIONS (2 per dimension, scores 1–5) ──
@@ -467,9 +486,25 @@ function askYesNo(msgs){
 async function main(){
   await botSay([
     'Olá! Sou o assistente de diagnóstico da <strong>WeAI</strong>. 👋',
-    'Vou fazer algumas perguntas para entender como a IA pode ajudar sua empresa. Leva cerca de 15 minutos.',
-    'Já tenho algumas informações: você é o <strong>dono da Press Metrologia</strong>, setor <strong>industrial</strong>. Vamos completar o restante?'
+    'Vou fazer algumas perguntas para entender como a inteligência artificial pode ajudar sua empresa. Leva cerca de <strong>15 minutos</strong>.',
+    'Vamos começar com algumas informações básicas sobre você e a empresa.'
   ]);
+
+  // ── IDENTIFICAÇÃO ─────────────────────────────────────
+  const nomeVal = await askText(['Qual é o seu nome completo?'], 'Seu nome...', false);
+  S.answers.nome = nomeVal;
+
+  const empresaVal = await askText([`Prazer, ${nomeVal.split(' ')[0]}! De qual empresa você faz parte?`], 'Nome da empresa...', false);
+  S.answers.empresa = empresaVal;
+
+  const setorOpt = await askOpts(['Qual o setor de atuação da empresa?'], SETOR_OPTS);
+  S.answers.setor = setorOpt.v; S.answers.setorLabel = setorOpt.l;
+
+  const cargoOpt = await askOpts(['Qual é o seu cargo?'], CARGO_OPTS);
+  S.answers.cargo = cargoOpt.v; S.answers.cargoLabel = cargoOpt.l;
+
+  const areaOpt = await askOpts(['E qual é a sua área de atuação dentro da empresa?'], AREA_ID_OPTS);
+  S.answers.area = areaOpt.v; S.answers.areaLabel = areaOpt.l;
 
   const funcOpt = await askOpts(['Quantos funcionários a empresa tem hoje?'], FUNC_OPTS);
   S.answers.funcionarios = funcOpt.v;
@@ -478,7 +513,7 @@ async function main(){
   S.answers.faturamento = fatOpt.v;
   S.answers.porte = fatOpt.porte || 'P';
 
-  const pathOpt = await askOpts(['Perfeito. O que melhor descreve seu momento com IA?'],[
+  const pathOpt = await askOpts([`Perfeito! Agora me conta: o que melhor descreve o seu momento com IA?`],[
     {l:'🔴 Tenho um ou mais problemas específicos que quero resolver com IA',v:'1'},
     {l:'🟡 Quero entender como a IA pode ajudar minha empresa, mas não sei por onde começar',v:'2'}
   ]);
