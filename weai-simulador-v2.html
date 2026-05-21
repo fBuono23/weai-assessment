@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador de Assessment — WeAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0A0F1E;--blue:#1847E8;--cyan:#00C2FF;--teal:#00B4A0;
+  --muted:#6B7A99;--border:#E4E8F0;--bg:#F1F5F9;--white:#FFFFFF;--ink:#1E293B;
+  --grad:linear-gradient(135deg,#0A0F1E,#162038,#0D2A4A);
+  --grad-b:linear-gradient(135deg,#1847E8,#00C2FF);
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+
+/* HEADER */
+.hdr{background:var(--grad);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:#fff;letter-spacing:-.5px}
+.logo em{font-style:normal;background:var(--grad-b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.hdr-badge{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);padding:3px 10px;border-radius:100px}
+.pain-counter{font-size:11px;font-weight:600;background:rgba(0,194,255,.2);border:1px solid rgba(0,194,255,.35);color:#00C2FF;padding:3px 10px;border-radius:100px;display:none}
+
+/* CHAT */
+.chat{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;max-width:680px;width:100%;margin:0 auto;scroll-behavior:smooth}
+
+/* BUBBLES */
+.brow{display:flex;gap:8px;align-items:flex-end}
+.brow.bot{justify-content:flex-start}
+.brow.user{justify-content:flex-end}
+.av{width:28px;height:28px;border-radius:50%;background:var(--grad-b);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Syne',sans-serif;font-size:8px;font-weight:800;color:#fff}
+.bbl{max-width:80%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.6;animation:popIn .2s ease}
+.bbl.bot{background:var(--white);border:1px solid var(--border);border-bottom-left-radius:4px;color:var(--ink);box-shadow:0 1px 4px rgba(10,15,30,.06)}
+.bbl.user{background:var(--grad-b);color:#fff;border-bottom-right-radius:4px;font-weight:500}
+.bbl strong{font-weight:600}
+
+/* PAIN TAG */
+.pain-tag{display:inline-flex;align-items:center;gap:6px;background:#EEF2FF;border:1px solid #C7D2FE;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#4338CA;margin:4px 0}
+
+/* TYPING */
+.typing{display:flex;gap:4px;align-items:center;padding:11px 14px}
+.typing span{width:6px;height:6px;background:var(--border);border-radius:50%;animation:bounce 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+
+/* INPUT ZONE */
+.iz{background:var(--white);border-top:1px solid var(--border);padding:12px 16px;flex-shrink:0;max-width:680px;width:100%;margin:0 auto}
+
+/* OPTIONS */
+.opts{display:flex;flex-direction:column;gap:6px}
+.obtn{background:var(--white);border:1.5px solid var(--border);border-radius:11px;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:13.5px;font-weight:500;color:var(--ink);cursor:pointer;text-align:left;transition:all .15s;line-height:1.4}
+.obtn:hover{border-color:var(--blue);background:#F0F4FF;transform:translateX(2px)}
+
+/* MULTI SELECT */
+.multi-wrap{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.clbl{display:flex;align-items:center;gap:10px;background:var(--white);border:1.5px solid var(--border);border-radius:11px;padding:10px 13px;font-size:13.5px;font-weight:500;color:var(--ink);cursor:pointer;transition:all .15s}
+.clbl:hover{border-color:var(--blue);background:#F0F4FF}
+.clbl input{display:none}
+.clbl.ck{border-color:var(--blue);background:#EEF2FF;color:var(--blue)}
+.cbox{width:18px;height:18px;border:2px solid var(--border);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.clbl.ck .cbox{background:var(--blue);border-color:var(--blue)}
+.cbox svg{display:none}
+.clbl.ck .cbox svg{display:block}
+.conf-btn{background:var(--grad-b);color:#fff;border:none;border-radius:11px;padding:11px;font-family:'DM Sans',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;width:100%;transition:all .2s}
+.conf-btn:disabled{opacity:.35;cursor:not-allowed}
+.conf-btn:not(:disabled):hover{opacity:.9;transform:translateY(-1px)}
+
+/* TEXT INPUT */
+.trow{display:flex;gap:8px;align-items:flex-end}
+.tinp{flex:1;background:var(--white);border:1.5px solid var(--border);border-radius:11px;padding:10px 13px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);resize:none;outline:none;min-height:42px;max-height:96px;line-height:1.5;transition:border-color .15s}
+.tinp:focus{border-color:var(--blue)}
+.tinp::placeholder{color:#A0ADBF}
+.sbtn{background:var(--grad-b);border:none;border-radius:11px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s}
+.sbtn:disabled{opacity:.35;cursor:not-allowed}
+.sbtn:not(:disabled):hover{opacity:.9;transform:scale(1.05)}
+.skip-lnk{background:none;border:none;color:var(--muted);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;padding:5px 0 0;text-decoration:underline;width:100%;text-align:center;display:block}
+
+/* RESULTS */
+.results{display:none;max-width:680px;width:100%;margin:0 auto;padding:0 16px 60px;overflow-y:auto}
+.results.show{display:block}
+
+.rdiv{display:flex;align-items:center;gap:10px;margin:22px 0 14px;font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.rdiv::before,.rdiv::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.rcard{background:var(--white);border:1px solid var(--border);border-radius:18px;padding:22px;margin-bottom:12px;box-shadow:0 2px 10px rgba(10,15,30,.05)}
+.rcard-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px;display:flex;align-items:center;gap:7px}
+.rcard-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+
+/* PAIN TABLE */
+.ptable{width:100%;border-collapse:collapse;font-size:12.5px}
+.ptable th{text-align:left;padding:7px 10px;background:var(--bg);color:var(--muted);font-weight:600;font-size:11px;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.ptable td{padding:10px 10px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.4}
+.ptable tr:last-child td{border:none}
+.ptable .pnum{font-weight:700;color:var(--blue)}
+.ptable .pdesc{color:var(--ink);font-weight:400;max-width:180px}
+
+/* RADAR */
+.radar-wrap{display:flex;justify-content:center}
+#resSvg{width:100%;max-width:260px;height:auto;overflow:visible}
+
+/* PROFILE CARD */
+.lvl-1{background:linear-gradient(135deg,#1C2740,#2D3A52)}
+.lvl-2{background:linear-gradient(135deg,#1A3575,#1847E8)}
+.lvl-3{background:linear-gradient(135deg,#065F46,#00B4A0)}
+.lvl-4{background:linear-gradient(135deg,#312E81,#1847E8 50%,#00C2FF)}
+.prf-card{border-radius:14px;padding:20px;margin-top:12px;overflow:hidden}
+.prf-badge{display:inline-block;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:3px 10px;border-radius:100px;margin-bottom:10px}
+.prf-name{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#fff;margin-bottom:3px}
+.prf-avg{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:12px}
+.prf-msg{font-size:13px;line-height:1.7;color:rgba(255,255,255,.82);font-weight:300}
+
+/* SCORE CELLS */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.scell{background:var(--bg);border:1px solid var(--border);border-radius:11px;padding:11px 13px}
+.scell-lbl{font-size:10px;color:var(--muted);font-weight:500;margin-bottom:3px}
+.scell-val{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:var(--ink);line-height:1}
+.scell-sub{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* CLASS BADGE */
+.cbadge{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;padding:7px 13px;border-radius:9px;margin-bottom:14px}
+.c-alta{background:#FEE2E2;color:#B91C1C}
+.c-medio{background:#FEF9C3;color:#A16207}
+.c-qw{background:#DCFCE7;color:#15803D}
+.c-nur{background:#F1F5F9;color:#475569}
+
+/* KV ROWS */
+.kv{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;gap:10px}
+.kv:last-child{border:none}
+.kk{color:var(--muted);font-weight:400;flex-shrink:0}
+.kv-val{color:var(--ink);font-weight:600;text-align:right}
+
+/* DIM BARS */
+.drow{margin-bottom:12px}
+.drow:last-child{margin-bottom:0}
+.dhead{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px}
+.dname{font-weight:500}
+.dscore{font-weight:700;font-size:11px}
+.dtrack{height:6px;background:var(--bg);border-radius:100px;border:1px solid var(--border);overflow:hidden}
+.dfill{height:100%;border-radius:100px;width:0%;transition:width 1.3s cubic-bezier(.22,1,.36,1)}
+
+/* QW CHIPS */
+.qw-chip{display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:11.5px;font-weight:500;color:var(--ink);margin:2px 2px 0 0;line-height:1.4}
+
+/* FOLLOWUP */
+.fup-box{background:var(--navy);border-radius:12px;padding:16px;margin-top:6px}
+.fup-lbl{font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px}
+.fup-txt{font-size:13px;line-height:1.75;color:rgba(255,255,255,.82);font-weight:300;font-style:italic}
+.fup-ch{margin-top:8px;font-size:11px;color:rgba(255,255,255,.35);font-weight:500}
+
+@keyframes popIn{from{opacity:0;transform:scale(.95) translateY(3px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.fanim{animation:fadeUp .4s ease forwards}
+
+@media(max-width:480px){.bbl{max-width:88%}.sgrid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="logo">We<em>AI</em></div>
+  <div class="hdr-right">
+    <div class="pain-counter" id="painCounter"></div>
+    <div class="hdr-badge">Simulador · Assessment</div>
+  </div>
+</header>
+
+<div class="chat" id="chat"></div>
+<div class="iz" id="iz"></div>
+<div class="results" id="results"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+const S = {
+  answers: { nome:'Fernando Buono', empresa:'Press Metrologia', setor:'Indústria', cargo:'dono' },
+  path: null,
+  pains: []   // [{descricao, area, tempo, impacto[], pessoas, tentativas[], urgencia, financeiro}]
+};
+
+// ═══════════════════════════════════════════════════════
+// OPTION CONSTANTS
+// ═══════════════════════════════════════════════════════
+const AREA_OPTS = [
+  {l:'Operações / Produção',v:'operacoes'},{l:'Comercial / Vendas',v:'comercial'},
+  {l:'Financeiro',v:'financeiro'},{l:'RH / Pessoas',v:'rh'},
+  {l:'Atendimento ao cliente',v:'atendimento'},{l:'TI / Suporte interno',v:'ti'},
+  {l:'Qualidade / Metrologia',v:'producao'},{l:'Jurídico',v:'juridico'},{l:'Outro',v:'outro'}
+];
+const TEMPO_OPTS = [
+  {l:'Menos de 6 meses',v:'<6m'},{l:'6 a 12 meses',v:'6-12m'},
+  {l:'1 a 3 anos',v:'1-3a'},{l:'Mais de 3 anos',v:'>3a'}
+];
+const IMPACTO_OPTS = [
+  {l:'Perda de tempo da equipe',v:'tempo'},{l:'Perda financeira direta',v:'financeiro'},
+  {l:'Queda de qualidade / erros',v:'qualidade'},{l:'Insatisfação de clientes',v:'clientes'},
+  {l:'Risco de compliance ou auditoria',v:'compliance'},{l:'Outro',v:'outro'}
+];
+const PESSOAS_OPTS = [
+  {l:'1 a 5 pessoas',v:'1-5'},{l:'5 a 20 pessoas',v:'5-20'},
+  {l:'20 a 100 pessoas',v:'20-100'},{l:'Mais de 100 pessoas',v:'100+'}
+];
+const TENT_OPTS = [
+  {l:'Sim, com tecnologia ou ferramentas',v:'tech'},
+  {l:'Sim, com ajuste de processo',v:'processo'},
+  {l:'Sim, contratando mais pessoas',v:'pessoas'},
+  {l:'Não tentamos ainda',v:'nao'}
+];
+const URG_OPTS = [
+  {l:'🔴 Crítica — está travando o negócio',v:'critica'},
+  {l:'🟠 Alta — impacto significativo no dia a dia',v:'alta'},
+  {l:'🟡 Média — importante, mas não urgente',v:'media'},
+  {l:'⚪ Baixa — estou explorando opções',v:'baixa'}
+];
+const FIN_OPTS = [
+  {l:'Difícil de estimar',v:'nd'},{l:'Até R$ 50 mil / ano',v:'<50k'},
+  {l:'R$ 50 mil a R$ 200 mil / ano',v:'50-200k'},{l:'Acima de R$ 200 mil / ano',v:'>200k'}
+];
+const FAT_OPTS = [
+  {l:'Até R$ 360 mil',v:'ate360',porte:'Micro'},
+  {l:'R$ 360 mil – R$ 4,8 milhões',v:'360-4.8m',porte:'P'},
+  {l:'R$ 4,8 milhões – R$ 300 milhões',v:'4.8m-300m',porte:'M'},
+  {l:'Acima de R$ 300 milhões',v:'>300m',porte:'G'}
+];
+const FUNC_OPTS = [
+  {l:'1 a 50 funcionários',v:'1-50'},{l:'51 a 200 funcionários',v:'51-200'},
+  {l:'201 a 500 funcionários',v:'201-500'},{l:'Mais de 500 funcionários',v:'500+'}
+];
+const EXP_AREAS_OPTS = [
+  {l:'Operações / Produção',v:'operacoes'},{l:'Comercial / Vendas',v:'comercial'},
+  {l:'Financeiro',v:'financeiro'},{l:'RH / Pessoas',v:'rh'},
+  {l:'Atendimento ao cliente',v:'atendimento'},{l:'TI / Suporte interno',v:'ti'},
+  {l:'Qualidade / Metrologia',v:'producao'},{l:'Marketing',v:'marketing'}
+];
+const FERR_OPTS = [
+  {l:'Maioria dos processos ainda é manual ou em papel',v:'manual'},
+  {l:'Usamos ferramentas básicas (e-mail, planilhas)',v:'basico'},
+  {l:'Temos sistemas integrados (ERP, CRM ou similares)',v:'integrado'},
+  {l:'Já usamos alguma automação em pelo menos uma área',v:'automacao'}
+];
+const MOT_OPTS = [
+  {l:'Reduzir custos operacionais',v:'custo'},
+  {l:'Aumentar a produtividade da equipe',v:'produtividade'},
+  {l:'Melhorar a experiência do cliente',v:'cliente'},
+  {l:'Reduzir erros e retrabalho',v:'erros'},
+  {l:'Ganhar velocidade e agilidade',v:'velocidade'},
+  {l:'Outro',v:'outro'}
+];
+const DISP_OPTS = [
+  {l:'Esta semana',v:'esta-semana'},{l:'Próxima semana',v:'proxima-semana'},
+  {l:'Em 15 dias ou mais',v:'15-dias'}
+];
+
+// ── MATURITY QUESTION OPTIONS (2 per dimension, scores 1–5) ──
+const MAT_D1Q1 = [
+  {l:'Papel, cadernos e comunicação verbal — muito pouco digitalizado',score:1},
+  {l:'Planilhas (Excel/Google Sheets) e e-mail são a base do trabalho',score:2},
+  {l:'Cada área tem seu próprio sistema (ERP, CRM, sistema de vendas...)',score:3},
+  {l:'Nossos sistemas se comunicam — uma atualização em um lado reflete nos outros',score:4},
+  {l:'Grande parte dos processos roda automaticamente, sem precisar de ação manual',score:5},
+];
+const MAT_D1Q2 = [
+  {l:'Alguém vai pessoalmente, liga ou manda mensagem informal',score:1},
+  {l:'Enviamos um e-mail — sem rastreamento formal',score:2},
+  {l:'Preenchemos um formulário ou abrimos um chamado em algum sistema',score:3},
+  {l:'Temos fluxos de aprovação, mas algumas etapas ainda dependem de ação manual',score:4},
+  {l:'O próprio sistema notifica, aprova e registra tudo automaticamente',score:5},
+];
+const MAT_D2Q1 = [
+  {l:'Pergunto a quem "sabe de cabeça" ou guarda em planilha própria',score:1},
+  {l:'Alguém montaria um relatório manualmente — levaria alguns dias',score:2},
+  {l:'Temos relatórios, mas nem sempre com o nível de detalhe que preciso',score:3},
+  {l:'Consigo acessar relatórios atualizados em poucas horas',score:4},
+  {l:'Tenho dashboards com informações em tempo real ou quase real',score:5},
+];
+const MAT_D2Q2 = [
+  {l:'Cada área guarda do seu jeito — planilhas, sistemas próprios, anotações',score:1},
+  {l:'Temos sistemas por área, mas cruzar informações exige trabalho manual',score:2},
+  {l:'Há uma base central, mas encontramos dados inconsistentes com frequência',score:3},
+  {l:'Dados centralizados e confiáveis, com pequenas exceções ainda manuais',score:4},
+  {l:'Base de dados unificada, consistente e acessível por quem precisa',score:5},
+];
+const MAT_D3Q1 = [
+  {l:'Na prática — o novo colaborador aprende observando o mais experiente',score:1},
+  {l:'Temos algumas anotações ou e-mails antigos que servem de guia',score:2},
+  {l:'Temos documentos, mas nem sempre estão atualizados ou são seguidos',score:3},
+  {l:'Processos documentados e seguidos, mas revisões formais ainda são pouco frequentes',score:4},
+  {l:'Processos documentados, revisados periodicamente e seguidos de forma consistente',score:5},
+];
+const MAT_D3Q2 = [
+  {l:'Muda o tempo todo — nos adaptamos conforme a necessidade do momento',score:1},
+  {l:'Muda com alguma frequência quando percebemos que algo não funciona',score:2},
+  {l:'Raramente — temos uma forma estabelecida de fazer as coisas',score:3},
+  {l:'Mudanças são planejadas e comunicadas, mas nem sempre formalizadas',score:4},
+  {l:'Quando muda, documentamos, comunicamos e treinamos a equipe formalmente',score:5},
+];
+const MAT_D4Q1 = [
+  {l:'Não — quando algo dá problema, chamamos alguém externo ou nos viramos',score:1},
+  {l:'Temos alguém que cuida de TI, mas principalmente quando surge problema',score:2},
+  {l:'Temos uma equipe de TI que mantém os sistemas funcionando no dia a dia',score:3},
+  {l:'Área de TI ativa com alguns projetos de melhoria contínua além do suporte',score:4},
+  {l:'TI estruturada com roadmap de projetos, indicadores e entregas planejadas',score:5},
+];
+const MAT_D4Q2 = [
+  {l:'Cada sistema é uma "ilha" — os dados não se comunicam entre eles',score:1},
+  {l:'Temos algumas conexões, mas ainda copiamos dados manualmente com frequência',score:2},
+  {l:'A maioria dos sistemas se conecta, com algumas lacunas ainda',score:3},
+  {l:'Sistemas bem integrados, com automações para os principais fluxos de dados',score:4},
+  {l:'Integração completa — praticamente nenhum processo exige entrada manual de dados',score:5},
+];
+const MAT_D5Q1 = [
+  {l:'Como custo — qualquer investimento em tecnologia precisa de muita justificativa',score:1},
+  {l:'Com abertura, mas sem prioridade definida — fica para "quando houver tempo"',score:2},
+  {l:'Apoiamos iniciativas pontuais quando alguém toma a frente',score:3},
+  {l:'Temos projetos de inovação em andamento com orçamento e responsável definidos',score:4},
+  {l:'Inovação é pilar estratégico — metas, budget e acompanhamento sistemático',score:5},
+];
+const MAT_D5Q2 = [
+  {l:'Ainda não tenho clareza sobre isso',score:1},
+  {l:'Provavelmente sim, mas ainda não pensamos de forma estruturada',score:2},
+  {l:'Identificamos oportunidades, mas ainda sem plano ou prazo concreto',score:3},
+  {l:'Temos pelo menos uma iniciativa de automação ou IA já planejada',score:4},
+  {l:'Sim — objetivos claros, plano definido e estamos ativamente buscando execução',score:5},
+];
+
+// ═══════════════════════════════════════════════════════
+// DOM HELPERS
+// ═══════════════════════════════════════════════════════
+const chatEl   = document.getElementById('chat');
+const izEl     = document.getElementById('iz');
+const resultsEl= document.getElementById('results');
+const painCtr  = document.getElementById('painCounter');
+
+function scroll(){ setTimeout(()=>{ chatEl.scrollTop = chatEl.scrollHeight; },60); }
+
+function addBot(html){
+  const r=document.createElement('div'); r.className='brow bot';
+  r.innerHTML=`<div class="av">W</div><div class="bbl bot">${html}</div>`;
+  chatEl.appendChild(r); scroll();
+}
+function addUser(txt){
+  const r=document.createElement('div'); r.className='brow user';
+  r.innerHTML=`<div class="bbl user">${txt}</div>`;
+  chatEl.appendChild(r); scroll();
+}
+function showTypingIndicator(){
+  const r=document.createElement('div'); r.className='brow bot'; r.id='__typing';
+  r.innerHTML=`<div class="av">W</div><div class="bbl bot"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  chatEl.appendChild(r); scroll(); return r;
+}
+function clearIz(){ izEl.innerHTML=''; }
+function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+// ═══════════════════════════════════════════════════════
+// BOT SAY (sequential with typing animation)
+// ═══════════════════════════════════════════════════════
+async function botSay(msgs){
+  const arr=Array.isArray(msgs)?msgs:[msgs];
+  for(const msg of arr){
+    if(!msg) continue; // ignora mensagens vazias
+    await wait(320);
+    const t=showTypingIndicator();
+    const delay=Math.min(400+msg.replace(/<[^>]+>/g,'').length*7, 1200);
+    await wait(delay);
+    t.remove();
+    addBot(msg);
+    await wait(80);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// INPUT UI RENDERERS (Promise-based)
+// ═══════════════════════════════════════════════════════
+
+function askOpts(msgs, opts){
+  return new Promise(async resolve=>{
+    await botSay(msgs);
+    clearIz();
+    const wrap=document.createElement('div'); wrap.className='opts';
+    opts.forEach(opt=>{
+      const btn=document.createElement('button'); btn.className='obtn';
+      btn.textContent=opt.l;
+      btn.onclick=()=>{ clearIz(); addUser(opt.l); resolve(opt); };
+      wrap.appendChild(btn);
+    });
+    izEl.appendChild(wrap); scroll();
+  });
+}
+
+function askMulti(msgs, opts, minOne=true){
+  return new Promise(async resolve=>{
+    await botSay(msgs);
+    clearIz();
+    const wrap=document.createElement('div');
+    const mw=document.createElement('div'); mw.className='multi-wrap';
+    const conf=document.createElement('button'); conf.className='conf-btn'; conf.textContent='Confirmar seleção'; conf.disabled=minOne;
+
+    opts.forEach(opt=>{
+      const lbl=document.createElement('label'); lbl.className='clbl';
+      lbl.innerHTML=`<input type="checkbox" value="${opt.v}">
+        <div class="cbox"><svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span>${opt.l}</span>`;
+      const inp=lbl.querySelector('input');
+      inp.onchange=e=>{
+        // mutual exclusion: "nao" vs rest
+        if(e.target.value==='nao' && e.target.checked){
+          mw.querySelectorAll('input:checked').forEach(i=>{ if(i.value!=='nao'){i.checked=false;i.closest('.clbl').classList.remove('ck');} });
+        } else if(e.target.checked && e.target.value!=='nao'){
+          const naoInp=mw.querySelector('input[value="nao"]');
+          if(naoInp && naoInp.checked){ naoInp.checked=false; naoInp.closest('.clbl').classList.remove('ck'); }
+        }
+        lbl.classList.toggle('ck',e.target.checked);
+        conf.disabled=minOne && mw.querySelectorAll('input:checked').length===0;
+      };
+      mw.appendChild(lbl);
+    });
+
+    conf.onclick=()=>{
+      const vals=[...mw.querySelectorAll('input:checked')].map(i=>i.value);
+      const lbls=[...mw.querySelectorAll('.clbl.ck span')].map(s=>s.textContent);
+      clearIz(); addUser(lbls.join(' · ')); resolve(vals);
+    };
+    wrap.appendChild(mw); wrap.appendChild(conf);
+    izEl.appendChild(wrap); scroll();
+  });
+}
+
+function askText(msgs, placeholder, optional=false){
+  return new Promise(async resolve=>{
+    await botSay(msgs);
+    clearIz();
+    const wrap=document.createElement('div');
+    wrap.innerHTML=`
+      <div class="trow">
+        <textarea class="tinp" id="__tinp" placeholder="${placeholder}" rows="2"></textarea>
+        <button class="sbtn" id="__sbtn" ${!optional?'disabled':''}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+      </div>
+      ${optional?'<button class="skip-lnk" id="__skip">Pular esta pergunta</button>':''}`;
+    const tinp=wrap.querySelector('#__tinp');
+    const sbtn=wrap.querySelector('#__sbtn');
+    const skip=wrap.querySelector('#__skip');
+    tinp.oninput=()=>{
+      sbtn.disabled=tinp.value.trim().length===0&&!optional;
+      tinp.style.height='auto';
+      tinp.style.height=Math.min(tinp.scrollHeight,96)+'px';
+    };
+    tinp.onkeydown=e=>{ if(e.key==='Enter'&&!e.shiftKey&&!sbtn.disabled){e.preventDefault();sbtn.click();} };
+    sbtn.onclick=()=>{ const v=tinp.value.trim(); if(!v&&!optional)return; clearIz(); addUser(v||'—'); resolve(v); };
+    if(skip) skip.onclick=()=>{ clearIz(); addUser('(pulei esta pergunta)'); resolve(''); };
+    izEl.appendChild(wrap);
+    setTimeout(()=>tinp.focus(),100); scroll();
+  });
+}
+
+function askYesNo(msgs){
+  return askOpts(msgs,[{l:'➕ Sim, tenho mais um problema',v:'sim'},{l:'✅ Não, é isso',v:'nao'}]);
+}
+
+// ═══════════════════════════════════════════════════════
+// MAIN FLOW
+// ═══════════════════════════════════════════════════════
+async function main(){
+  await botSay([
+    'Olá! Sou o assistente de diagnóstico da <strong>WeAI</strong>. 👋',
+    'Vou fazer algumas perguntas para entender como a IA pode ajudar sua empresa. Leva cerca de 15 minutos.',
+    'Já tenho algumas informações: você é o <strong>dono da Press Metrologia</strong>, setor <strong>industrial</strong>. Vamos completar o restante?'
+  ]);
+
+  const funcOpt = await askOpts(['Quantos funcionários a empresa tem hoje?'], FUNC_OPTS);
+  S.answers.funcionarios = funcOpt.v;
+
+  const fatOpt = await askOpts(['E o faturamento anual aproximado?'], FAT_OPTS);
+  S.answers.faturamento = fatOpt.v;
+  S.answers.porte = fatOpt.porte || 'P';
+
+  const pathOpt = await askOpts(['Perfeito. O que melhor descreve seu momento com IA?'],[
+    {l:'🔴 Tenho um ou mais problemas específicos que quero resolver com IA',v:'1'},
+    {l:'🟡 Quero entender como a IA pode ajudar minha empresa, mas não sei por onde começar',v:'2'}
+  ]);
+  S.path = pathOpt.v;
+
+  await runMaturidade();
+
+  if(S.path==='1') await runPath1();
+  else await runPath2();
+
+  await runCommon();
+  await showResults();
+}
+
+// ═══════════════════════════════════════════════════════
+// MATURIDADE — 10 perguntas diretas (2 por dimensão)
+// ═══════════════════════════════════════════════════════
+async function runMaturidade(){
+  await botSay([
+    'Antes de seguirmos, vou fazer <strong>10 perguntas rápidas</strong> sobre como a empresa funciona hoje.',
+    'Elas formam o <strong>Radar de Maturidade em IA</strong> — 5 dimensões, 2 perguntas cada. Sem tecnicidade, prometo. 🙂'
+  ]);
+
+  S.answers.mat = {};
+  const m = S.answers.mat;
+
+  // ── D1: Maturidade Digital ────────────────────────────
+  await botSay(['<strong>📱 Bloco 1 de 5 — Digitalização do Trabalho</strong><br><span style="font-size:12px;color:#6B7A99">Pergunta 1 e 2 de 10</span>']);
+  m.d1q1 = await askOpts(
+    ['Como a maioria das tarefas e processos do dia a dia da empresa é realizada hoje?'],
+    MAT_D1Q1
+  );
+  m.d1q2 = await askOpts(
+    ['Quando algo precisa passar de uma área para outra — aprovação, pedido, notificação — o que normalmente acontece?'],
+    MAT_D1Q2
+  );
+
+  // ── D2: Inteligência de Dados ─────────────────────────
+  await botSay(['<strong>📊 Bloco 2 de 5 — Dados e Informação</strong><br><span style="font-size:12px;color:#6B7A99">Pergunta 3 e 4 de 10</span>']);
+  m.d2q1 = await askOpts(
+    ['Se você precisasse saber o desempenho de uma área da empresa no mês passado, como obteria essa informação?'],
+    MAT_D2Q1
+  );
+  m.d2q2 = await askOpts(
+    ['Os dados de diferentes partes da empresa ficam centralizados ou cada área guarda do seu jeito?'],
+    MAT_D2Q2
+  );
+
+  // ── D3: Prontidão Operacional ─────────────────────────
+  await botSay(['<strong>⚙️ Bloco 3 de 5 — Processos e Operação</strong><br><span style="font-size:12px;color:#6B7A99">Pergunta 5 e 6 de 10</span>']);
+  m.d3q1 = await askOpts(
+    ['Como os processos da empresa são documentados e ensinados para novos colaboradores?'],
+    MAT_D3Q1
+  );
+  m.d3q2 = await askOpts(
+    ['Com que frequência a forma de trabalhar da equipe muda?'],
+    MAT_D3Q2
+  );
+
+  // ── D4: Capacidade Tecnológica ────────────────────────
+  await botSay(['<strong>🖥️ Bloco 4 de 5 — Tecnologia e Sistemas</strong><br><span style="font-size:12px;color:#6B7A99">Pergunta 7 e 8 de 10</span>']);
+  m.d4q1 = await askOpts(
+    ['A empresa tem alguém dedicado a cuidar de tecnologia e sistemas no dia a dia?'],
+    MAT_D4Q1
+  );
+  m.d4q2 = await askOpts(
+    ['Como os sistemas e ferramentas de tecnologia da empresa funcionam juntos?'],
+    MAT_D4Q2
+  );
+
+  // ── D5: Visão Estratégica ─────────────────────────────
+  await botSay(['<strong>🎯 Bloco 5 de 5 — Estratégia e Liderança</strong><br><span style="font-size:12px;color:#6B7A99">Pergunta 9 e 10 de 10</span>']);
+  m.d5q1 = await askOpts(
+    ['Como a liderança da empresa enxerga investimentos em tecnologia e inovação?'],
+    MAT_D5Q1
+  );
+  m.d5q2 = await askOpts(
+    ['Existe algum objetivo ou meta da empresa que poderia ser diretamente beneficiado por IA ou automação?'],
+    MAT_D5Q2
+  );
+
+  // Resumo imediato das pontuações
+  const scores = calcGlobalScores();
+  const avg = (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1);
+  const dimNames = ['Maturidade Digital','Inteligência de Dados','Prontidão Operacional','Capacidade Tecnológica','Visão Estratégica'];
+  const lvlLbl   = ['','⬜ Inicial','🟨 Em desenvolvimento','🟦 Estruturado','🟩 Avançado','🟪 Referência'];
+  const barChar  = (s) => '█'.repeat(s) + '░'.repeat(5-s);
+  const resumo   = dimNames.map((n,i)=>`${barChar(scores[i])} <strong>${n}:</strong> ${scores[i]}/5`).join('<br>');
+  await botSay([
+    `✅ Radar mapeado! Média geral: <strong>${avg}/5</strong><br><br>${resumo}`,
+    `Agora vamos ao seu momento específico com IA.`
+  ]);
+}
+
+// ═══════════════════════════════════════════════════════
+// PATH 1 — Coleta de dores + aprofundamento por dor
+// ═══════════════════════════════════════════════════════
+async function runPath1(){
+  await botSay([
+    'Entendido! Vou mapear todos os seus problemas primeiro, e depois aprofundar cada um.',
+    'Me conta sobre o <strong>primeiro problema</strong>. Descreva com suas palavras — sem preocupação com tecnicidade.'
+  ]);
+
+  // ── FASE 1: COLETA DE DORES (ilimitado) ─────────────
+  while(true){
+    const desc = await askText([], 'Descreva o problema...', false);
+    S.pains.push({ descricao: desc });
+    updatePainCounter();
+
+    const mais = await askYesNo([`✅ Problema ${S.pains.length} registrado. <strong>Tem mais alguma dor que queira mapear?</strong>`]);
+
+    if(mais.v === 'nao') break;
+
+    await botSay([`Perfeito! Me conta sobre o próximo problema.`]);
+  }
+
+  // ── CONFIRMAÇÃO DO RESUMO DAS DORES ──────────────────
+  while(true){
+    const lista = S.pains.map((p,i)=>`📌 <strong>Dor ${i+1}:</strong> "${p.descricao}"`).join('<br>');
+    const resumoMsg = S.pains.length === 1
+      ? `Antes de prosseguir, deixa eu confirmar o que você me contou:<br><br>${lista}`
+      : `Antes de prosseguir, deixa eu confirmar as <strong>${S.pains.length} dores</strong> que você mapeou:<br><br>${lista}`;
+
+    await botSay([resumoMsg, 'Está tudo correto?']);
+
+    const confirm = await askOpts([], [
+      {l:'✅ Sim, está correto — pode prosseguir', v:'ok'},
+      {l:'➕ Quero adicionar mais uma dor', v:'add'},
+    ]);
+
+    if(confirm.v === 'ok') break;
+
+    await botSay([`Claro! Me conta sobre essa dor adicional.`]);
+    const extra = await askText([], 'Descreva o problema...', false);
+    S.pains.push({ descricao: extra });
+    updatePainCounter();
+  }
+
+  // ── ANÁLISE MACRO ─────────────────────────────────────
+  const macroOpt = await askOpts([
+    'Ótimo! Uma pergunta antes de aprofundarmos cada problema:',
+    'Você gostaria que nossa equipe realizasse também uma <strong>análise macro da sua empresa</strong>? O objetivo é identificar oportunidades de IA que talvez não estejam no seu radar — aquelas "dores invisíveis" que costumam ter grande retorno quando resolvidas.'
+  ],[
+    {l:'🔍 Sim, quero uma análise completa da empresa também', v:'sim'},
+    {l:'Não, vamos focar nos problemas que listei', v:'nao'},
+  ]);
+  S.answers.macroAnalysis = macroOpt.v === 'sim';
+
+  if(S.answers.macroAnalysis){
+    await botSay(['Anotado! Nossa equipe vai preparar essa análise antes da conversa. Agora vamos aprofundar cada problema que você mapeou.']);
+  } else {
+    await botSay([`Combinado! Vamos focar nos ${S.pains.length > 1 ? S.pains.length + ' problemas' : 'problema'} que você listou.`]);
+  }
+
+  if(S.pains.length > 1){
+    await botSay([`Farei as mesmas perguntas para cada dor — assim tudo fica devidamente mapeado e classificado.`]);
+  }
+
+  // ── FASE 2: APROFUNDAMENTO POR DOR ─────────────────
+  for(let i=0; i<S.pains.length; i++){
+    const p = S.pains[i];
+    const num = S.pains.length > 1 ? ` ${i+1} de ${S.pains.length}` : '';
+    const intro = S.pains.length > 1
+      ? [`━━ Problema${num} ━━`, `<strong>"${p.descricao}"</strong>`]
+      : [`Vamos aprofundar esse problema.`];
+
+    await botSay(intro);
+
+    const areaOpt = await askOpts(['Qual área da empresa é mais afetada?'], AREA_OPTS);
+    p.area = areaOpt.v; p.areaLabel = areaOpt.l;
+
+    const tempoOpt = await askOpts(['Há quanto tempo esse problema existe?'], TEMPO_OPTS);
+    p.tempo = tempoOpt.v; p.tempoLabel = tempoOpt.l;
+
+    p.impacto = await askMulti(['Qual o principal impacto que ele causa? (pode marcar mais de uma)'], IMPACTO_OPTS);
+
+    const pessoasOpt = await askOpts(['Quantas pessoas são afetadas por isso diariamente?'], PESSOAS_OPTS);
+    p.pessoas = pessoasOpt.v; p.pessoasLabel = pessoasOpt.l;
+
+    p.tentativas = await askMulti(['Você já tentou resolver esse problema antes?'], TENT_OPTS);
+
+    const urgOpt = await askOpts(['Qual é a urgência para resolver isso?'], URG_OPTS);
+    p.urgencia = urgOpt.v; p.urgenciaLabel = urgOpt.l;
+
+    const finOpt = await askOpts(['Você consegue estimar o impacto financeiro por ano?'], FIN_OPTS);
+    p.financeiro = finOpt.v; p.financeiroLabel = finOpt.l;
+
+    if(i < S.pains.length-1){
+      await botSay([`✅ Problema ${i+1} mapeado e classificado! Próximo problema.`]);
+    } else {
+      await botSay([`✅ ${S.pains.length > 1 ? 'Todos os problemas mapeados' : 'Problema mapeado'}! Excelente. Quase terminando.`]);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// PATH 2
+// ═══════════════════════════════════════════════════════
+async function runPath2(){
+  S.pains = []; // path 2 doesn't use pains array
+
+  const areasOpt = await askMulti(['Quais áreas têm mais trabalho manual ou repetitivo? (pode marcar mais de uma)'], EXP_AREAS_OPTS);
+  S.answers.exp_areas = areasOpt;
+
+  const ferrOpt = await askOpts(['Como está a digitalização hoje na empresa?'], FERR_OPTS);
+  S.answers.exp_ferramentas = ferrOpt.v;
+
+  const motOpt = await askMulti(['O que mais te motiva a explorar IA agora?'], MOT_OPTS);
+  S.answers.exp_motivacao = motOpt;
+
+  const proc = await askText(
+    ['Tem algum processo específico que você já imagina que poderia ser automatizado? (opcional)'],
+    'Ex: relatórios de calibração, follow-up de clientes...', true
+  );
+  S.answers.exp_processo = proc;
+}
+
+// ═══════════════════════════════════════════════════════
+// COMMON ENDING
+// ═══════════════════════════════════════════════════════
+async function runCommon(){
+  const dispOpt = await askOpts(['Qual a sua disponibilidade para uma conversa com nossa equipe?'], DISP_OPTS);
+  S.answers.disponibilidade = dispOpt.l;
+
+  const coment = await askText(
+    ['Por último — tem algum comentário adicional? (opcional)'],
+    'Comentário...', true
+  );
+  S.answers.comentario = coment;
+
+  clearIz();
+}
+
+// ═══════════════════════════════════════════════════════
+// PAIN COUNTER UI
+// ═══════════════════════════════════════════════════════
+function updatePainCounter(){
+  const n=S.pains.length;
+  painCtr.style.display = n>0?'block':'none';
+  painCtr.textContent = `${n} dor${n!==1?'es':''} mapeada${n!==1?'s':''}`;
+}
+
+// ═══════════════════════════════════════════════════════
+// SCORING
+// ═══════════════════════════════════════════════════════
+const DIMS=[
+  {name:'Maturidade Digital',    color:'#1847E8'},
+  {name:'Inteligência de Dados', color:'#00C2FF'},
+  {name:'Prontidão Operacional', color:'#7C3AED'},
+  {name:'Capacidade Tecnológica',color:'#00B4A0'},
+  {name:'Visão Estratégica',     color:'#F59E0B'},
+];
+
+function scorePain(p){
+  const fat=S.answers.faturamento;
+  const tent=p.tentativas||[];
+  const urgMap={critica:5,alta:4,media:3,baixa:1};
+
+  // D1 Maturidade Digital
+  let d1=fat==='4.8m-300m'?3:fat==='>300m'?4:2;
+  if(tent.includes('tech')) d1=Math.max(d1,3);
+
+  // D2 Inteligência de Dados
+  let d2=1;
+  if(['>3a','1-3a'].includes(p.tempo)) d2=2;
+  if(fat==='4.8m-300m') d2=Math.min(d2+1,5);
+  if(fat==='>300m') d2=Math.min(d2+2,5);
+  if(tent.includes('tech')) d2=Math.max(d2,2);
+
+  // D3 Prontidão Operacional
+  let d3=1;
+  if(tent.includes('processo')) d3=2;
+  if(tent.includes('tech')) d3=3;
+  if(tent.includes('tech')&&p.tempo==='>3a') d3=4;
+
+  // D4 Capacidade Tecnológica
+  let d4=d1;
+
+  // D5 Visão Estratégica
+  let d5=(urgMap[p.urgencia]||2);
+  if(S.answers.cargo==='dono') d5=Math.min(d5+1,5);
+
+  return [d1,d2,d3,d4,d5];
+}
+
+function scoreP2(){
+  const fat=S.answers.faturamento;
+  const ferrMap={manual:1,basico:2,integrado:3,automacao:4};
+  const areas=S.answers.exp_areas||[];
+  const mot=S.answers.exp_motivacao||[];
+
+  let d1=ferrMap[S.answers.exp_ferramentas]||2;
+  if(fat==='4.8m-300m') d1=Math.min(d1+1,5);
+  if(fat==='>300m')     d1=Math.min(d1+1,5);
+
+  let d2=Math.max(1,d1-1);
+  if(areas.length>=3) d2=Math.min(d2+1,5);
+
+  let d3=1;
+  if(areas.length>=2) d3=2;
+  if(areas.length>=3) d3=3;
+  if(S.answers.exp_processo&&S.answers.exp_processo.length>10) d3=Math.min(d3+1,5);
+
+  let d4=d1;
+  let d5=2;
+  if(mot.length>=2) d5=3;
+  if(mot.length>=3) d5=4;
+  if(S.answers.cargo==='dono') d5=Math.min(d5+1,5);
+
+  return [d1,d2,d3,d4,d5];
+}
+
+function calcGlobalScores(){
+  const m = S.answers.mat || {};
+  const sc = (q1, q2) => {
+    const v1 = q1?.score ?? 2;
+    const v2 = q2?.score ?? 2;
+    return Math.max(1, Math.min(5, Math.round((v1 + v2) / 2)));
+  };
+  return [
+    sc(m.d1q1, m.d1q2), // Maturidade Digital
+    sc(m.d2q1, m.d2q2), // Inteligência de Dados
+    sc(m.d3q1, m.d3q2), // Prontidão Operacional
+    sc(m.d4q1, m.d4q2), // Capacidade Tecnológica
+    sc(m.d5q1, m.d5q2), // Visão Estratégica
+  ];
+}
+
+function classifyPain(p){
+  const urgMap={critica:3,alta:2,media:1,baixa:0};
+  const impactMap={nd:0,'<50k':1,'50-200k':2,'>200k':3};
+  const pessoasMap={'1-5':0,'5-20':1,'20-100':2,'100+':3};
+
+  // Viabilidade baseada nos scores DIRETOS do radar de maturidade
+  const matScores = calcGlobalScores();
+  const matAvg = matScores.reduce((a,b)=>a+b,0) / matScores.length;
+
+  // Fit com IA: D2 (Dados) + D3 (Prontidão) são os mais críticos
+  const fitBase = Math.round((matScores[1] + matScores[2]) / 2);
+  const fit = Math.min(3, Math.max(0, fitBase - 1)); // escala 0-3
+
+  const impact  = Math.max(pessoasMap[p.pessoas]||0, impactMap[p.financeiro]||0);
+  const urgency = urgMap[p.urgencia]||1;
+  const viab    = matAvg>=4?3 : matAvg>=3?2 : matAvg>=2?1 : 0;
+  const total   = fit + impact + urgency + viab;
+
+  if(total<=3)  return{cls:'c-nur',  label:'⚪ Nurturing',       total, fit, impact, urgency, viab};
+  if(total<=6)  return{cls:'c-qw',   label:'🟢 Quick Win',       total, fit, impact, urgency, viab};
+  if(total<=9)  return{cls:'c-medio',label:'🟡 Projeto Médio',   total, fit, impact, urgency, viab};
+               return{cls:'c-alta',  label:'🔴 Alta Prioridade', total, fit, impact, urgency, viab};
+}
+
+function classifyP2(){
+  const sc=scoreP2();
+  const avg=sc.reduce((a,b)=>a+b,0)/sc.length;
+  const areas=S.answers.exp_areas||[];
+  const mot=S.answers.exp_motivacao||[];
+  const volA=areas.length>=3?3:areas.length===2?2:areas.length===1?1:0;
+  const matB=avg>=4?3:avg>=3?2:avg>=2?1:0;
+  const claC=mot.length>=3?3:mot.length===2?2:mot.length===1?1:0;
+  const total=volA+matB+claC;
+  if(total<=2)  return{cls:'c-nur',label:'⚪ Nurturing',total};
+  if(total<=5)  return{cls:'c-qw', label:'🟢 Quick Win',total};
+  if(total<=7)  return{cls:'c-medio',label:'🟡 Projeto Médio',total};
+               return{cls:'c-alta',label:'🔴 Alta Prioridade',total};
+}
+
+function matLevel(avg){
+  if(avg<=2)return 1; if(avg<=3)return 2; if(avg<=4)return 3; return 4;
+}
+
+const PROFILES={
+  1:{cls:'lvl-1',badge:'Nível 1',name:'Iniciante Digital',msg:'Sua empresa está dando os primeiros passos na jornada digital. Antes de falar em IA avançada, existem iniciativas simples que podem transformar significativamente a forma como sua equipe trabalha.'},
+  2:{cls:'lvl-2',badge:'Nível 2',name:'Em Transformação',msg:'Sua empresa já tem uma base digital, mas ainda há muito espaço para automatizar processos que hoje consomem tempo e energia da equipe. O momento certo para começar com IA é exatamente este.'},
+  3:{cls:'lvl-3',badge:'Nível 3',name:'Estruturado para Evoluir',msg:'Sua empresa tem uma boa fundação digital. Agora é hora de fazer essa estrutura trabalhar de forma mais inteligente — com resultados mensuráveis em pouco tempo.'},
+  4:{cls:'lvl-4',badge:'Nível 4',name:'Pronto para IA',msg:'Sua empresa está entre as mais preparadas para adotar IA de forma estratégica. A estrutura existe, os dados estão disponíveis e há clareza sobre o que evoluir.'},
+};
+
+// ═══════════════════════════════════════════════════════
+// QUICK WINS MAP
+// ═══════════════════════════════════════════════════════
+const QW={
+  operacoes:['Geração automática de relatórios operacionais','Automação de workflows internos'],
+  comercial:['Qualificação automática de leads via chatbot','Follow-up automático de propostas'],
+  financeiro:['Automação de cobrança e lembretes','Conciliação bancária automatizada'],
+  rh:['Triagem inicial de currículos com IA','Chatbot de onboarding'],
+  atendimento:['Chatbot WhatsApp — triagem e FAQ','Categorização automática de tickets'],
+  ti:['Agente de L1 (reset de senha, FAQ técnico)','Roteamento automático de chamados'],
+  producao:['Geração automática de relatórios de qualidade','Automação de checklist de inspeção','Classificação de não-conformidades com IA'],
+  juridico:['Alertas automáticos de vencimento de contratos','Triagem de contratos com IA'],
+  marketing:['Assistente IA para geração de conteúdo','Automação de publicações'],
+  outro:['Diagnóstico personalizado — conversa com especialista recomendada'],
+};
+
+// ═══════════════════════════════════════════════════════
+// RADAR SVG
+// ═══════════════════════════════════════════════════════
+function drawRadar(scores,svgId){
+  const svg=document.getElementById(svgId);
+  if(!svg)return;
+  const cx=130,cy=130,maxR=85,n=5,step=(2*Math.PI)/n,st=-Math.PI/2;
+  const pt=(i,r)=>[cx+r*Math.cos(st+i*step),cy+r*Math.sin(st+i*step)];
+  const poly=ps=>ps.map(p=>p.join(',')).join(' ');
+  const uid=svgId.replace(/\W/g,'');
+  let out=`<defs>
+    <linearGradient id="gs${uid}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1847E8"/><stop offset="100%" stop-color="#00B4A0"/>
+    </linearGradient>
+    <filter id="gf${uid}"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+  for(let l=1;l<=5;l++){
+    const r=(maxR*l)/5;
+    const gp=Array.from({length:n},(_,i)=>pt(i,r));
+    const o=l===5;
+    out+=`<polygon points="${poly(gp)}" fill="${o?'rgba(241,245,249,.5)':'none'}" stroke="${o?'rgba(24,71,232,.25)':'rgba(180,190,210,.4)'}" stroke-width="${o?1.5:1}" ${!o?'stroke-dasharray="3 3"':''}/>`;
+  }
+  for(let i=0;i<n;i++){const[x,y]=pt(i,maxR);out+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(140,155,185,.4)" stroke-width="1"/>`;}
+  const sp=scores.map((s,i)=>pt(i,(maxR*Math.max(1,s))/5));
+  out+=`<polygon points="${poly(sp)}" fill="rgba(24,71,232,.14)" stroke="url(#gs${uid})" stroke-width="2.5" stroke-linejoin="round" filter="url(#gf${uid})"/>`;
+  sp.forEach(([x,y])=>{out+=`<circle cx="${x}" cy="${y}" r="5.5" fill="rgba(24,71,232,.12)"/>`;out+=`<circle cx="${x}" cy="${y}" r="4" fill="#1847E8" stroke="white" stroke-width="2"/>`;});
+  const lR=maxR+34;
+  const labs=DIMS.map(d=>d.name);
+  for(let i=0;i<n;i++){
+    const[lx,ly]=pt(i,lR);
+    const parts=labs[i].split(' ');
+    const anch=lx<cx-8?'end':lx>cx+8?'start':'middle';
+    const mid=Math.ceil(parts.length/2);
+    const l1=parts.slice(0,mid).join(' ');
+    const l2=parts.slice(mid).join(' ');
+    const yo=l2?-6:4;
+    out+=`<text x="${lx}" y="${ly+yo}" text-anchor="${anch}" font-family="DM Sans,sans-serif" font-size="10" font-weight="600" fill="#1E293B">${l1}</text>`;
+    if(l2)out+=`<text x="${lx}" y="${ly+yo+13}" text-anchor="${anch}" font-family="DM Sans,sans-serif" font-size="10" font-weight="600" fill="#1E293B">${l2}</text>`;
+  }
+  svg.innerHTML=out;
+}
+
+// ═══════════════════════════════════════════════════════
+// RESULTS
+// ═══════════════════════════════════════════════════════
+async function showResults(){
+  await botSay(['Gerando seu diagnóstico completo... 🎯']);
+  await wait(1000);
+
+  const scores  = calcGlobalScores();
+  const avg     = scores.reduce((a,b)=>a+b,0)/scores.length;
+  const lvl     = matLevel(avg);
+  const profile = PROFILES[lvl];
+  const a       = S.answers;
+  const porteLbl={ate360:'Micro','360-4.8m':'Pequena (P)','4.8m-300m':'Média (M)','>300m':'Grande (G)'};
+  const LLBL=['','Inicial','Em desenvolvimento','Estruturado','Avançado','Referência'];
+
+  // Overall classif
+  let mainClassif;
+  if(S.path==='1' && S.pains.length>0){
+    const classifs=S.pains.map(p=>classifyPain(p));
+    mainClassif=classifs.sort((a,b)=>b.total-a.total)[0];
+  } else {
+    mainClassif=classifyP2();
+  }
+
+  // Quick wins
+  let qwAreas=[];
+  if(S.path==='1') qwAreas=[...new Set(S.pains.map(p=>p.area))].slice(0,3);
+  else qwAreas=(a.exp_areas||[]).slice(0,3);
+  const qwItems=qwAreas.flatMap(ar=>(QW[ar]||[]).slice(0,2)).slice(0,5);
+
+  // Follow-up script
+  const fname=(a.nome||'').split(' ')[0];
+  const fEmp=a.empresa||'sua empresa';
+  let fupScript='';
+  let fupChannel='';
+  const chanMap={
+    'c-alta':'📞 Ligação telefônica em até 24h (WhatsApp como backup)',
+    'c-medio':'📱 WhatsApp em até 48h',
+    'c-qw':'📱 WhatsApp em até 72h com resumo da solução',
+    'c-nur':'📧 E-mail automático + reativação em 30 dias',
+  };
+
+  if(S.path==='1' && S.pains.length>0){
+    const topPain=S.pains.sort((a,b)=>classifyPain(b).total-classifyPain(a).total)[0];
+    const areaLbl=topPain.areaLabel||'a área mencionada';
+    const macroAdd=a.macroAnalysis?' Também vou trazer uma análise de oportunidades que talvez não estejam no seu radar ainda.':'';
+    const scripts={
+      'c-alta':`"Oi ${fname}, tentei te ligar. Sou [nome] da WeAI. Analisei todas as dores que você mapeou — o problema em <strong>${areaLbl}</strong> tem impacto real e caminho concreto de solução.${macroAdd} Vale 30 minutos ainda essa semana?"`,
+      'c-medio':`"Oi ${fname}! WeAI aqui. Vi seu diagnóstico com atenção — especialmente o que você descreveu sobre <strong>${areaLbl}</strong>. Há iniciativas práticas que resolvem isso sem um projeto gigante.${macroAdd} Tem 45 minutos essa semana?"`,
+      'c-qw':`"Oi ${fname}! Da WeAI. Analisei seu diagnóstico e, para o problema em <strong>${areaLbl}</strong>, já tenho uma iniciativa específica em mente.${macroAdd} Posso mandar um resumo de 5 linhas para você avaliar?"`,
+      'c-nur':`"Oi ${fname}, da WeAI. Você preencheu nosso diagnóstico — quando o momento for certo, estamos à disposição para discutir as dores que você mapeou.${macroAdd} Posso mandar um material enquanto isso?"`
+    };
+    fupScript=scripts[mainClassif.cls]||scripts['c-medio'];
+    fupChannel=chanMap[mainClassif.cls]||'';
+  } else {
+    const topArea=(a.exp_areas||[])[0]||'sua operação';
+    fupScript=`"Oi ${fname}! Da WeAI. Analisei seu diagnóstico e, com base nas áreas que você sinalizou — especialmente <strong>${topArea}</strong> — já consigo mapear uma iniciativa específica que costuma trazer retorno rápido. Posso te mandar um resumo?"`;
+    fupChannel=chanMap[mainClassif.cls]||'';
+  }
+
+  // ── BUILD HTML ──────────────────────────────────────
+  resultsEl.innerHTML='';
+
+  // CLIENT VIEW
+  const LLBL_CLIENT=['','Inicial','Em desenvolvimento','Estruturado','Avançado','Referência'];
+  const dimBarsClient = DIMS.map((d,i)=>`
+    <div class="drow">
+      <div class="dhead">
+        <span class="dname">${d.name}</span>
+        <span class="dscore" style="color:${d.color}">${scores[i]}/5 · ${LLBL_CLIENT[scores[i]]}</span>
+      </div>
+      <div class="dtrack"><div class="dfill client-bar" style="background:${d.color}" data-w="${(scores[i]/5)*100}%"></div></div>
+    </div>`).join('');
+
+  const painsClientHtml = (S.path==='1' && S.pains.length>0)
+    ? `<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+        <div style="font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Problemas que você mapeou</div>
+        ${S.pains.map((p,i)=>`
+          <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+            <div style="width:22px;height:22px;border-radius:50%;background:var(--grad-b);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">${i+1}</div>
+            <div style="font-size:13px;color:var(--ink);line-height:1.5;padding-top:2px">${p.descricao}</div>
+          </div>`).join('')}
+      </div>`
+    : '';
+
+  resultsEl.innerHTML+=`
+  <div class="rdiv">Visão do Cliente</div>
+  <div class="rcard fanim">
+    <div class="rcard-title">🎯 Radar de Maturidade em IA</div>
+    <div class="rcard-sub">O que o cliente vê ao finalizar o formulário</div>
+    <div class="radar-wrap"><svg id="resSvg" viewBox="0 0 260 260" style="width:100%;max-width:240px;height:auto;overflow:visible"></svg></div>
+    <div class="prf-card ${profile.cls}" style="margin-top:14px">
+      <div class="prf-badge">${profile.badge}</div>
+      <div class="prf-name">${profile.name}</div>
+      <div class="prf-avg">Pontuação média: ${avg.toFixed(1)} de 5,0</div>
+      <div class="prf-msg">${profile.msg}</div>
+    </div>
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:14px">Pontuação por Dimensão</div>
+      ${dimBarsClient}
+    </div>
+    ${painsClientHtml}
+  </div>`;
+
+  // INTERNAL VIEW
+  resultsEl.innerHTML+=`<div class="rdiv">Ficha Interna WeAI</div>`;
+
+  // Pain summary table (only path 1)
+  if(S.path==='1' && S.pains.length>0){
+    let tableRows='';
+    S.pains.forEach((p,i)=>{
+    const urgLbl={critica:'🔴 Crítica',alta:'🟠 Alta',media:'🟡 Média',baixa:'⚪ Baixa'};
+      const c=classifyPain(p);
+      tableRows+=`<tr>
+        <td class="pnum">#${i+1}</td>
+        <td class="pdesc">"${p.descricao.length>55?p.descricao.slice(0,55)+'...':p.descricao}"</td>
+        <td>${p.areaLabel||'—'}</td>
+        <td>${urgLbl[p.urgencia]||'—'}</td>
+        <td style="font-size:11px;color:var(--muted)">Fit ${c.fit} · Imp ${c.impact} · Urg ${c.urgency} · Via ${c.viab}</td>
+        <td><span class="cbadge ${c.cls}" style="font-size:11px;padding:4px 8px">${c.label}</span><br><span style="font-size:10px;color:var(--muted)">${c.total}/12 pts</span></td>
+      </tr>`;
+    });
+    resultsEl.innerHTML+=`
+    <div class="rcard fanim">
+      <div class="rcard-title">📋 Mapa de Dores do Cliente</div>
+      <div class="rcard-sub">${S.pains.length} problema${S.pains.length!==1?'s':''} mapeado${S.pains.length!==1?'s':''} e classificado${S.pains.length!==1?'s':''}</div>
+      <div style="overflow-x:auto">
+        <table class="ptable">
+          <thead><tr><th>#</th><th>Descrição</th><th>Área</th><th>Urgência</th><th>Detalhamento</th><th>Classificação</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  // Classification + metadata
+  resultsEl.innerHTML+=`
+  <div class="rcard fanim">
+    <div class="rcard-title">📊 Classificação Geral do Lead</div>
+    <div class="cbadge ${mainClassif.cls}">${mainClassif.label}</div>
+    <div class="sgrid">
+      <div class="scell"><div class="scell-lbl">Empresa</div><div class="scell-val" style="font-size:14px;line-height:1.3">${a.empresa||'—'}</div></div>
+      <div class="scell"><div class="scell-lbl">Porte</div><div class="scell-val" style="font-size:15px">${porteLbl[a.faturamento]||'—'}</div></div>
+      <div class="scell"><div class="scell-lbl">Maturidade Digital</div><div class="scell-val" style="font-size:13px;line-height:1.3">Nível ${lvl} — ${LLBL[lvl]}</div></div>
+      <div class="scell"><div class="scell-lbl">Caminho</div><div class="scell-val" style="font-size:12px;line-height:1.3">${S.path==='1'?`🔴 ${S.pains.length} dor${S.pains.length!==1?'es':''} mapeada${S.pains.length!==1?'s':''}}`:'🟡 Explorando IA'}</div></div>
+    </div>
+    <div class="kv"><span class="kk">Score geral</span><span class="kv-val">${mainClassif.total}/${S.path==='1'?'12':'9'} pts</span></div>
+    <div class="kv"><span class="kk">Disponibilidade declarada</span><span class="kv-val">${a.disponibilidade||'—'}</span></div>
+    ${S.path==='1' ? `<div class="kv"><span class="kk">Análise macro solicitada</span><span class="kv-val" style="color:${a.macroAnalysis?'#15803D':'var(--muted)'}">${a.macroAnalysis?'✅ Sim — preparar antes da reunião':'Não solicitada'}</span></div>` : ''}
+  </div>`;
+
+  // Dimension scores
+  resultsEl.innerHTML+=`
+  <div class="rcard fanim">
+    <div class="rcard-title">📈 Pontuação por Dimensão</div>
+    <div id="dimBars"></div>
+  </div>`;
+
+  // Quick wins
+  resultsEl.innerHTML+=`
+  <div class="rcard fanim">
+    <div class="rcard-title">⚡ Quick Wins Sugeridos</div>
+    <div class="rcard-sub">Áreas prioritárias: ${qwAreas.join(', ')||'—'}</div>
+    ${qwItems.map(q=>`<span class="qw-chip">→ ${q}</span>`).join('')}
+  </div>`;
+
+  // Follow-up
+  resultsEl.innerHTML+=`
+  <div class="rcard fanim">
+    <div class="rcard-title">💬 Script de Abordagem</div>
+    <div class="rcard-sub">${fupChannel}</div>
+    <div class="fup-box">
+      <div class="fup-lbl">Mensagem recomendada</div>
+      <div class="fup-txt">${fupScript}</div>
+    </div>
+  </div>`;
+
+  resultsEl.classList.add('show');
+  resultsEl.scrollIntoView({behavior:'smooth',block:'start'});
+
+  // Animate radar + bars
+  setTimeout(()=>{
+    drawRadar(scores,'resSvg');
+    // Animate client-facing dimension bars
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      document.querySelectorAll('.client-bar').forEach((b,i)=>{
+        b.style.transition=`width 1.3s cubic-bezier(.22,1,.36,1) ${.1+i*.1}s`;
+        b.style.width=b.dataset.w;
+      });
+    }));
+    // Animate internal dimension bars
+    const barsEl=document.getElementById('dimBars');
+    if(barsEl){
+      barsEl.innerHTML=DIMS.map((d,i)=>`
+        <div class="drow">
+          <div class="dhead"><span class="dname">${d.name}</span><span class="dscore" style="color:${d.color}">${scores[i]}/5 · ${LLBL[scores[i]]}</span></div>
+          <div class="dtrack"><div class="dfill" style="background:${d.color};transition-delay:${.2+i*.08}s" data-w="${(scores[i]/5)*100}%"></div></div>
+        </div>`).join('');
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        barsEl.querySelectorAll('.dfill').forEach(b=>b.style.width=b.dataset.w);
+      }));
+    }
+  },300);
+
+  await wait(800);
+  await botSay([`✅ Diagnóstico completo! Role para ver o <strong>radar do cliente</strong> e a <strong>ficha interna da WeAI</strong> com todas as dores classificadas.`]);
+}
+
+// ═══════════════════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════════════════
+main();
+</script>
+</body>
+</html>
