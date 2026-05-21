@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnóstico de Maturidade em IA — WeAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:     #0A0F1E;
+  --ink2:    #1C2740;
+  --muted:   #6B7A99;
+  --border:  #E4E8F0;
+  --surface: #F7F9FC;
+  --white:   #FFFFFF;
+
+  --blue:    #1847E8;
+  --cyan:    #00C2FF;
+  --teal:    #00B4A0;
+  --violet:  #7C3AED;
+  --amber:   #F59E0B;
+  --rose:    #EF4444;
+
+  --grad-main: linear-gradient(135deg, #0A0F1E 0%, #162038 55%, #0D2A4A 100%);
+  --grad-blue: linear-gradient(135deg, #1847E8, #00C2FF);
+  --grad-score: linear-gradient(135deg, #1847E8 0%, #00B4A0 100%);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── HEADER ─────────────────────────────────────────────────── */
+.header {
+  background: var(--grad-main);
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.header-noise {
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.header-glow {
+  position: absolute;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,194,255,0.12) 0%, transparent 70%);
+  top: -200px; right: -100px;
+  pointer-events: none;
+}
+
+.header-glow2 {
+  position: absolute;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(24,71,232,0.2) 0%, transparent 70%);
+  bottom: -100px; left: 10%;
+  pointer-events: none;
+}
+
+.header-inner {
+  position: relative;
+  padding: 40px 24px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.logo em {
+  font-style: normal;
+  background: var(--grad-blue);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+
+.header-divider {
+  width: 40px; height: 2px;
+  background: var(--grad-blue);
+  border-radius: 2px;
+  margin-top: 4px;
+}
+
+.demo-pill {
+  display: none;
+  margin-top: 8px;
+  background: rgba(245,158,11,0.15);
+  border: 1px solid rgba(245,158,11,0.35);
+  color: #FCD34D;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 4px 14px;
+  border-radius: 100px;
+}
+
+/* ── LAYOUT ──────────────────────────────────────────────────── */
+.container {
+  max-width: 660px;
+  margin: 0 auto;
+  padding: 28px 16px 60px;
+}
+
+/* ── CARDS ───────────────────────────────────────────────────── */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 12px rgba(10,15,30,0.06);
+}
+
+.card-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── CLIENT CARD ─────────────────────────────────────────────── */
+.client-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+
+.client-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.client-company {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.path-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 100px;
+  letter-spacing: 0.3px;
+}
+
+.path-chip.p1 { background: #FEE2E2; color: #B91C1C; }
+.path-chip.p2 { background: #FEF9C3; color: #A16207; }
+
+/* ── RADAR CARD ──────────────────────────────────────────────── */
+.radar-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 0;
+}
+
+#radarSvg {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  overflow: visible;
+}
+
+/* ── PROFILE CARD ────────────────────────────────────────────── */
+.profile-card {
+  border-radius: 20px;
+  padding: 28px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.lvl-1 { background: linear-gradient(135deg, #1C2740, #2D3A52); }
+.lvl-2 { background: linear-gradient(135deg, #1A3575, #1847E8); }
+.lvl-3 { background: linear-gradient(135deg, #065F46, #00B4A0); }
+.lvl-4 { background: linear-gradient(135deg, #312E81, #1847E8, #00C2FF); }
+
+.profile-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.8);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 4px 14px;
+  border-radius: 100px;
+  margin-bottom: 14px;
+  position: relative;
+}
+
+.profile-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+  position: relative;
+}
+
+.profile-avg {
+  font-size: 13px;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 18px;
+  position: relative;
+}
+
+.profile-msg {
+  font-size: 14px;
+  line-height: 1.75;
+  color: rgba(255,255,255,0.82);
+  position: relative;
+  font-weight: 300;
+}
+
+/* ── DIMENSION BARS ──────────────────────────────────────────── */
+.dim-row {
+  margin-bottom: 18px;
+}
+
+.dim-row:last-child { margin-bottom: 0; }
+
+.dim-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 7px;
+}
+
+.dim-name {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.dim-score-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.dim-score-label strong {
+  font-weight: 700;
+}
+
+.bar-track {
+  height: 7px;
+  background: var(--surface);
+  border-radius: 100px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 100px;
+  width: 0%;
+  transition: width 1.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── CTA CARD ────────────────────────────────────────────────── */
+.cta-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px 28px;
+  margin-bottom: 16px;
+  text-align: center;
+  box-shadow: 0 2px 12px rgba(10,15,30,0.06);
+}
+
+.cta-eyebrow {
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.cta-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+  margin-bottom: 10px;
+}
+
+.cta-sub {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.65;
+  max-width: 420px;
+  margin: 0 auto 28px;
+  font-weight: 300;
+}
+
+.cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--grad-blue);
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 15px 32px;
+  border-radius: 14px;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s;
+  box-shadow: 0 6px 20px rgba(0,194,255,0.25), 0 2px 8px rgba(24,71,232,0.2);
+}
+
+.cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0,194,255,0.3), 0 4px 12px rgba(24,71,232,0.25);
+}
+
+.cta-btn:active { transform: translateY(0); opacity: 0.9; }
+
+.cta-note {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.cta-note svg { flex-shrink: 0; }
+
+/* ── FOOTER ──────────────────────────────────────────────────── */
+.footer {
+  text-align: center;
+  padding: 16px 24px 32px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.footer a { color: var(--muted); text-decoration: none; }
+.footer a:hover { color: var(--blue); }
+
+/* ── ANIMATIONS ──────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.anim { opacity: 0; animation: fadeUp 0.55s ease forwards; }
+.a1  { animation-delay: 0.05s; }
+.a2  { animation-delay: 0.15s; }
+.a3  { animation-delay: 0.25s; }
+.a4  { animation-delay: 0.35s; }
+.a5  { animation-delay: 0.45s; }
+.a6  { animation-delay: 0.55s; }
+
+/* ── SCORE RING ──────────────────────────────────────────────── */
+.score-ring-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 8px 0 4px;
+  flex-wrap: wrap;
+}
+
+.score-ring {
+  position: relative;
+  width: 72px; height: 72px;
+}
+
+.score-ring svg { transform: rotate(-90deg); }
+
+.score-ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.score-ring-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.score-ring-max {
+  font-size: 9px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.score-ring-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink);
+  text-align: center;
+  max-width: 68px;
+  line-height: 1.3;
+  margin-top: 6px;
+}
+
+.score-ring-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .logo { font-size: 26px; }
+  .client-name { font-size: 22px; }
+  .profile-title { font-size: 22px; }
+  .card { padding: 22px 18px; }
+  .profile-card { padding: 22px 18px; }
+  .cta-card { padding: 28px 18px; }
+  .cta-title { font-size: 19px; }
+  .score-ring-wrap { gap: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-noise"></div>
+  <div class="header-glow"></div>
+  <div class="header-glow2"></div>
+  <div class="header-inner">
+    <div class="logo">We<em>AI</em></div>
+    <div class="header-label">Diagnóstico de Maturidade em IA</div>
+    <div class="header-divider"></div>
+    <div class="demo-pill" id="demoPill">◎ Modo demonstração</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- CLIENT CARD -->
+  <div class="card anim a1" id="clientCard">
+    <div class="card-label">Diagnóstico</div>
+    <div class="client-name" id="clientName">Olá!</div>
+    <div class="client-meta">
+      <span class="client-company" id="clientCompany"></span>
+      <span class="path-chip" id="pathChip" style="display:none"></span>
+    </div>
+  </div>
+
+  <!-- RADAR CARD -->
+  <div class="card anim a2" style="padding-bottom: 20px;">
+    <div class="card-label">Radar de Maturidade</div>
+    <div class="radar-wrap">
+      <svg id="radarSvg" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </div>
+
+  <!-- MINI SCORE RINGS -->
+  <div class="card anim a3">
+    <div class="card-label">Pontuação por Dimensão</div>
+    <div class="score-ring-wrap" id="ringWrap"></div>
+  </div>
+
+  <!-- PROFILE CARD -->
+  <div class="profile-card anim a4" id="profileCard">
+    <div class="profile-badge" id="profileBadge">Nível —</div>
+    <div class="profile-title" id="profileTitle">—</div>
+    <div class="profile-avg" id="profileAvg">Pontuação média: —</div>
+    <div class="profile-msg" id="profileMsg">—</div>
+  </div>
+
+  <!-- DIMENSION BARS -->
+  <div class="card anim a5">
+    <div class="card-label">Detalhamento</div>
+    <div id="dimBars"></div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-card anim a6">
+    <div class="cta-eyebrow">Próximo passo</div>
+    <div class="cta-title">Transforme esse diagnóstico em ação</div>
+    <div class="cta-sub">Nossa equipe analisou seu perfil e está pronta para apresentar iniciativas concretas, no ritmo certo para o seu momento.</div>
+    <a href="#" id="ctaBtn" class="cta-btn" target="_blank" rel="noopener">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 16.582c-.26.726-1.292 1.396-1.993 1.561-.527.123-1.2.166-3.534-.76-2.972-1.165-4.882-4.07-5.03-4.26-.148-.19-1.214-1.616-1.214-3.08 0-1.463.744-2.18 1.035-2.49.26-.28.567-.347.756-.347.189 0 .38.001.54.009.174.01.408-.066.639.492.24.579.814 2.002.885 2.148.072.146.12.318.022.51-.098.19-.147.31-.294.477-.147.168-.309.373-.441.5-.132.128-.27.267-.116.523.154.256.685 1.13 1.47 1.83 1.01.902 1.862 1.18 2.124 1.313.262.132.415.11.568-.066.153-.176.654-.766.829-1.027.174-.263.348-.22.588-.132.24.088 1.526.72 1.787.852.262.131.436.197.5.306.065.11.065.633-.194 1.34z"/>
+      </svg>
+      Falar com um Especialista
+    </a>
+    <div class="cta-note">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Retorno em até 48 horas úteis
+    </div>
+  </div>
+
+</div>
+
+<footer class="footer">
+  © 2025 WeAI Tecnologia &nbsp;·&nbsp; <a href="https://weai.com.br">weai.com.br</a>
+</footer>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────
+const WA_NUMBER  = '5511999999999'; // ← substituir pelo número da WeAI
+const WA_DEFAULT = 'Olá! Acabei de preencher o diagnóstico de maturidade em IA da WeAI e gostaria de conversar com um especialista.';
+
+const DIMS = [
+  { key:'d1', name:'Maturidade Digital',     short:'Maturidade\nDigital',     color:'#1847E8' },
+  { key:'d2', name:'Inteligência de Dados',  short:'Inteligência\nde Dados',  color:'#00C2FF' },
+  { key:'d3', name:'Prontidão Operacional',  short:'Prontidão\nOperacional',  color:'#7C3AED' },
+  { key:'d4', name:'Capacidade Tecnológica', short:'Capacidade\nTecnológica', color:'#00B4A0' },
+  { key:'d5', name:'Visão Estratégica',      short:'Visão\nEstratégica',      color:'#F59E0B' },
+];
+
+const LEVEL_LABELS = ['', 'Inicial', 'Em desenvolvimento', 'Estruturado', 'Avançado', 'Referência'];
+
+const PROFILES = {
+  1: {
+    cls: 'lvl-1', badge: 'Nível 1',
+    title: 'Iniciante Digital',
+    msg: 'Sua empresa está dando os primeiros passos na jornada digital. Isso é mais comum do que parece — e é exatamente aqui que as maiores oportunidades de ganho de eficiência estão escondidas. Antes de falar em inteligência artificial, existem iniciativas simples e rápidas que podem transformar a forma como sua equipe trabalha. Nossa equipe vai analisar seu perfil e entrar em contato com um caminho claro para começar.'
+  },
+  2: {
+    cls: 'lvl-2', badge: 'Nível 2',
+    title: 'Em Transformação',
+    msg: 'Sua empresa já tem uma base digital, mas ainda há muito espaço para automatizar processos que hoje consomem tempo e energia da sua equipe. O momento certo para começar com IA é exatamente este: quando os processos existem, mas ainda dependem demais das pessoas para funcionar. Nossa equipe vai identificar onde estão as maiores oportunidades e entrar em contato em breve.'
+  },
+  3: {
+    cls: 'lvl-3', badge: 'Nível 3',
+    title: 'Estruturado para Evoluir',
+    msg: 'Sua empresa tem uma boa fundação digital. Os sistemas estão em uso, os processos existem — e agora é hora de fazer essa estrutura trabalhar de forma mais inteligente. Existem oportunidades reais de aplicar IA para ampliar o que você já tem, reduzir esforço manual e gerar resultados mensuráveis em pouco tempo. Nossa equipe vai mapear as melhores iniciativas para o seu perfil.'
+  },
+  4: {
+    cls: 'lvl-4', badge: 'Nível 4',
+    title: 'Pronto para IA',
+    msg: 'Sua empresa está entre as mais preparadas para adotar inteligência artificial de forma estratégica. A estrutura existe, os dados estão disponíveis e há clareza sobre o que precisa evoluir. O próximo passo é transformar esse potencial em resultados concretos — com as iniciativas certas, na sequência certa. Nossa equipe vai entrar em contato com um diagnóstico personalizado.'
+  }
+};
+
+// ── PARSE PARAMS ──────────────────────────────────────────────────────
+function parse() {
+  const p = new URLSearchParams(window.location.search);
+  const nome    = p.get('nome')    || '';
+  const empresa = p.get('empresa') || '';
+  const path    = p.get('path')    || '';
+  const raw = DIMS.map(d => parseInt(p.get(d.key)));
+  const demo = raw.some(v => isNaN(v) || v < 1 || v > 5);
+  const scores = demo ? [3, 2, 4, 3, 4] : raw;
+  return { nome, empresa, path, scores, demo };
+}
+
+function level(avg) {
+  if (avg <= 2.0) return 1;
+  if (avg <= 3.0) return 2;
+  if (avg <= 4.0) return 3;
+  return 4;
+}
+
+// ── RADAR ─────────────────────────────────────────────────────────────
+function drawRadar(scores) {
+  const svg = document.getElementById('radarSvg');
+  const cx = 160, cy = 160, maxR = 96;
+  const n = 5, step = (2 * Math.PI) / n, start = -Math.PI / 2;
+
+  const pt = (i, r) => [
+    cx + r * Math.cos(start + i * step),
+    cy + r * Math.sin(start + i * step)
+  ];
+
+  const poly = pts => pts.map(p => p.join(',')).join(' ');
+
+  let out = `<defs>
+    <linearGradient id="gScore" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1847E8"/>
+      <stop offset="100%" stop-color="#00B4A0"/>
+    </linearGradient>
+    <radialGradient id="gFill" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="#1847E8" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#00C2FF" stop-opacity="0.06"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>`;
+
+  // Concentric grid pentagons
+  for (let lvl = 1; lvl <= 5; lvl++) {
+    const r = (maxR * lvl) / 5;
+    const gridPts = Array.from({length: n}, (_, i) => pt(i, r));
+    const isOuter = lvl === 5;
+    out += `<polygon points="${poly(gridPts)}"
+      fill="${isOuter ? 'rgba(241,245,249,0.6)' : 'none'}"
+      stroke="${isOuter ? 'rgba(24,71,232,0.25)' : 'rgba(180,190,210,0.45)'}"
+      stroke-width="${isOuter ? 1.5 : 1}"
+      ${!isOuter ? 'stroke-dasharray="3 3"' : ''}/>`;
+  }
+
+  // Axes
+  for (let i = 0; i < n; i++) {
+    const [x, y] = pt(i, maxR);
+    out += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}"
+      stroke="rgba(140,155,185,0.4)" stroke-width="1"/>`;
+  }
+
+  // Score polygon (filled)
+  const scorePts = scores.map((s, i) => pt(i, (maxR * s) / 5));
+  out += `<polygon points="${poly(scorePts)}"
+    fill="url(#gFill)"
+    stroke="url(#gScore)"
+    stroke-width="2.5"
+    stroke-linejoin="round"
+    filter="url(#glow)"/>`;
+
+  // Score dots + halos
+  scorePts.forEach(([x, y]) => {
+    out += `<circle cx="${x}" cy="${y}" r="7" fill="rgba(24,71,232,0.15)"/>`;
+    out += `<circle cx="${x}" cy="${y}" r="4.5" fill="#1847E8" stroke="white" stroke-width="2"/>`;
+  });
+
+  // Labels
+  const labelR = maxR + 36;
+  for (let i = 0; i < n; i++) {
+    const [lx, ly] = pt(i, labelR);
+    const parts = DIMS[i].name.split(' ');
+    const anchor = lx < cx - 8 ? 'end' : lx > cx + 8 ? 'start' : 'middle';
+    const mid = Math.ceil(parts.length / 2);
+    const l1 = parts.slice(0, mid).join(' ');
+    const l2 = parts.slice(mid).join(' ');
+    const yOff = l2 ? -6 : 4;
+    const color = DIMS[i].color;
+
+    out += `<text x="${lx}" y="${ly + yOff}" text-anchor="${anchor}"
+      font-family="DM Sans, sans-serif" font-size="11" font-weight="600"
+      fill="#1C2740">${l1}</text>`;
+    if (l2) {
+      out += `<text x="${lx}" y="${ly + yOff + 14}" text-anchor="${anchor}"
+        font-family="DM Sans, sans-serif" font-size="11" font-weight="600"
+        fill="#1C2740">${l2}</text>`;
+    }
+
+    // Score label on axis
+    const [ax, ay] = pt(i, (maxR * scores[i]) / 5);
+    const offset = scores[i] > 2 ? -14 : 14;
+    const ao = scores[i] > 2 
+      ? (ay - cy < -20 ? ay - 12 : ay + 12) 
+      : (ay - cy < 0  ? ay + 14 : ay - 8);
+  }
+
+  svg.innerHTML = out;
+}
+
+// ── SCORE RINGS ───────────────────────────────────────────────────────
+function drawRings(scores) {
+  const wrap = document.getElementById('ringWrap');
+  const r = 28, stroke = 6, circ = 2 * Math.PI * r;
+
+  wrap.innerHTML = DIMS.map((d, i) => {
+    const s = scores[i];
+    const pct = s / 5;
+    const dash = circ * pct;
+    const gap  = circ - dash;
+    return `
+    <div class="score-ring-item">
+      <div class="score-ring">
+        <svg width="72" height="72" viewBox="0 0 72 72">
+          <circle cx="36" cy="36" r="${r}" fill="none"
+            stroke="var(--border)" stroke-width="${stroke}"/>
+          <circle cx="36" cy="36" r="${r}" fill="none"
+            stroke="${d.color}" stroke-width="${stroke}"
+            stroke-linecap="round"
+            stroke-dasharray="${dash} ${gap}"
+            style="transition: stroke-dasharray 1.4s cubic-bezier(0.22,1,0.36,1); transition-delay:${0.5 + i * 0.08}s"
+            data-dash="${dash}" data-gap="${gap}"
+            class="ring-arc"/>
+        </svg>
+        <div class="score-ring-label">
+          <span class="score-ring-num" style="color:${d.color}">${s}</span>
+          <span class="score-ring-max">/5</span>
+        </div>
+      </div>
+      <div class="score-ring-name">${d.short.replace('\n','<br>')}</div>
+    </div>`;
+  }).join('');
+
+  // Animate rings (start at 0, animate to target)
+  setTimeout(() => {
+    document.querySelectorAll('.ring-arc').forEach(arc => {
+      arc.style.strokeDasharray = `${arc.dataset.dash} ${arc.dataset.gap}`;
+    });
+  }, 80);
+
+  // Reset to 0 first
+  document.querySelectorAll('.ring-arc').forEach(arc => {
+    arc.style.strokeDasharray = `0 ${2 * Math.PI * r}`;
+    arc.style.transition = 'none';
+  });
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.querySelectorAll('.ring-arc').forEach(arc => {
+      arc.style.transition = `stroke-dasharray 1.4s cubic-bezier(0.22,1,0.36,1)`;
+    });
+    setTimeout(() => {
+      document.querySelectorAll('.ring-arc').forEach(arc => {
+        arc.style.strokeDasharray = `${arc.dataset.dash} ${arc.dataset.gap}`;
+      });
+    }, 80);
+  }));
+}
+
+// ── DIMENSION BARS ────────────────────────────────────────────────────
+function drawBars(scores) {
+  const el = document.getElementById('dimBars');
+  el.innerHTML = DIMS.map((d, i) => {
+    const s = scores[i];
+    return `
+    <div class="dim-row">
+      <div class="dim-head">
+        <span class="dim-name">${d.name}</span>
+        <span class="dim-score-label" style="color:${d.color}">
+          <strong>${s}/5</strong>&nbsp;·&nbsp;${LEVEL_LABELS[s]}
+        </span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill"
+          style="background:linear-gradient(90deg,${d.color}cc,${d.color}); transition-delay:${0.7 + i * 0.1}s"
+          data-w="${(s/5)*100}%"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Animate bars
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.querySelectorAll('.bar-fill').forEach(b => {
+      b.style.width = b.dataset.w;
+    });
+  }));
+}
+
+// ── PROFILE ───────────────────────────────────────────────────────────
+function renderProfile(lvl, avg) {
+  const p = PROFILES[lvl];
+  const card = document.getElementById('profileCard');
+  card.className = `profile-card anim a4 ${p.cls}`;
+  document.getElementById('profileBadge').textContent = p.badge;
+  document.getElementById('profileTitle').textContent = p.title;
+  document.getElementById('profileAvg').textContent   = `Pontuação média: ${avg.toFixed(1)} de 5,0`;
+  document.getElementById('profileMsg').textContent   = p.msg;
+}
+
+// ── CLIENT ────────────────────────────────────────────────────────────
+function renderClient({ nome, empresa, path, demo }) {
+  if (demo) document.getElementById('demoPill').style.display = 'inline-block';
+
+  document.getElementById('clientName').textContent =
+    nome ? `Olá, ${nome.split(' ')[0]}!` : 'Olá!';
+
+  document.getElementById('clientCompany').textContent =
+    empresa || (demo ? 'Empresa (demonstração)' : '');
+
+  const chip = document.getElementById('pathChip');
+  if (path === '1') {
+    chip.style.display = 'inline-flex';
+    chip.className = 'path-chip p1';
+    chip.innerHTML = '● Tem uma dor específica';
+  } else if (path === '2') {
+    chip.style.display = 'inline-flex';
+    chip.className = 'path-chip p2';
+    chip.innerHTML = '● Explorando IA';
+  }
+}
+
+// ── CTA ───────────────────────────────────────────────────────────────
+function setupCTA({ nome, empresa }) {
+  let msg = WA_DEFAULT;
+  if (nome)    msg += ` Me chamo ${nome}`;
+  if (empresa) msg += ` e trabalho na ${empresa}`;
+  msg += '.';
+  document.getElementById('ctaBtn').href =
+    `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────
+function init() {
+  const data = parse();
+  const avg  = data.scores.reduce((a,b) => a+b, 0) / data.scores.length;
+  const lvl  = level(avg);
+
+  renderClient(data);
+  drawRadar(data.scores);
+  drawRings(data.scores);
+  renderProfile(lvl, avg);
+  drawBars(data.scores);
+  setupCTA(data);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
